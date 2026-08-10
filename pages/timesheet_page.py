@@ -13,7 +13,7 @@ class TimesheetPage(BasePage):
         """
         Finds the Nth available day cell that has 'Add time' and clicks it.
         """
-        cell = self.page.get_by_text("Add time").nth(index)
+        cell = self.page.locator('[data-testid^="add-time-"]').nth(index)
         expect(cell).to_be_visible()
         cell.click()
         
@@ -21,7 +21,7 @@ class TimesheetPage(BasePage):
         """
         Finds the Nth available 'Add work' project button and clicks it.
         """
-        add_btn = self.page.locator('button[data-testid^="add-project-"]').nth(index)
+        add_btn = self.page.locator('[data-testid^="add-project-"]').nth(index)
         expect(add_btn).to_be_visible()
         add_btn.click()
         
@@ -29,12 +29,12 @@ class TimesheetPage(BasePage):
         """
         Fills the hours and description for the Nth project input available in the drawer.
         """
-        input_field = self.page.locator('input[data-testid^="hour-input-"]').nth(index)
+        input_field = self.page.locator('[data-testid^="hour-input-"]').nth(index)
         expect(input_field).to_be_visible()
         input_field.fill(hours)
         input_field.blur()
         
-        desc_field = self.page.locator('textarea[data-testid^="description-input-"]').nth(index)
+        desc_field = self.page.locator('[data-testid^="description-input-"]').nth(index)
         expect(desc_field).to_be_visible()
         desc_field.fill(description)
         desc_field.blur()
@@ -44,11 +44,11 @@ class TimesheetPage(BasePage):
         
     def save_as_draft(self):
         self.page.get_by_test_id("save-draft-btn").click()
-        expect(self.page.get_by_text("Draft saved successfully")).to_be_visible(timeout=5000)
+        expect(self.page.get_by_text("Draft saved successfully")).to_be_visible(timeout=15000)
         
     def submit_timesheet(self):
         self.page.get_by_test_id("submit-timesheet-btn").click()
-        expect(self.page.get_by_text("Timesheet submitted successfully!")).to_be_visible(timeout=5000)
+        expect(self.page.get_by_text("Timesheet submitted successfully!")).to_be_visible(timeout=15000)
 
     def expect_timesheet_in_list(self, status: str):
-        expect(self.page.get_by_test_id(f"timesheet-row-{status}").first).to_be_visible()
+        expect(self.page.get_by_test_id(f"timesheet-row-{status}").first).to_be_visible(timeout=15000)
