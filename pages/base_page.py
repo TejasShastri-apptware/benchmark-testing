@@ -6,7 +6,7 @@ class BasePage:
 
     def dismiss_welcome_dialog_if_present(self):
         """Helper to dismiss the welcome dialog if it appears on first login."""
-        get_started = self.page.get_by_role("button", name="Get Started")
+        get_started = self.page.get_by_test_id("get-started-btn")
         try:
             if get_started.is_visible(timeout=2000):
                 get_started.click()

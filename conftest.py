@@ -1,13 +1,29 @@
+import time
 import os
 from dotenv import load_dotenv
 import pytest
 from playwright.sync_api import Playwright, BrowserContext
 from pages.login_page import LoginPage
 
+AUTH_STATE_TTL_SECONDS = 55*60
+
 # Dynamically find .env.e2e in the same directory as this conftest.py file
 # This is robust regardless of where the user runs the pytest command from
 env_path = os.path.join(".env.e2e")
 load_dotenv(env_path)
+
+def pytest_configure(config):
+    """Override base_url from the E2E_BASE_URL environment variable if set.
+    This allows CI and staging runs to target the correct environment without
+    editing pytest.ini (e.g. E2E_BASE_URL=https://staging.example.com pytest).
+    Falls back to the value in pytest.ini (http://localhost:3000) for local dev.
+    """
+    env_base_url = os.getenv("E2E_BASE_URL")
+    if env_base_url:
+        # pytest-playwright reads base_url from config.option.base_url first,
+        # then falls back to the ini value, so setting it here takes precedence.
+        config.option.__dict__.setdefault("base_url", env_base_url)
+        config.option.base_url = env_base_url
 
 def get_auth_state_path(persona: str) -> str:
     # Store auth states in a hidden .auth directory
@@ -20,7 +36,11 @@ def setup_persona_session(playwright: Playwright, base_url: str, persona: str, e
     
     # Optional: check if state is fresh here. For now we just recreate it if it doesn't exist.
     if os.path.exists(state_path):
-        return state_path
+        age_seconds = time.time() - os.path.getmtime(state_path)
+        if age_seconds < AUTH_STATE_TTL_SECONDS:
+            return state_path
+        # delete stale state and perform a fresh login
+        os.remove(state_path)
 
     browser = playwright.chromium.launch(headless=True)
     context = browser.new_context(base_url=base_url)
