@@ -3,3 +3,6 @@ playwright>=1.40.0
 pytest-playwright>=0.4.3
 pytest-html>=4.1.1
 python-dotenv>=1.0.0
+gspread
+google-api-python-client
+google-auth
