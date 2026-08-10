@@ -11,9 +11,10 @@ class TimesheetPage(BasePage):
         
     def open_available_day_by_index(self, index: int = 0):
         """
-        Finds the Nth available day cell that has 'Add time' and clicks it.
+        Finds the Nth available day cell with data-testid^="add-time-" and clicks it.
+        Uses the data-testid prefix locator instead of text matching for robustness.
         """
-        cell = self.page.get_by_text("Add time").nth(index)
+        cell = self.page.locator('[data-testid^="add-time-"]').nth(index)
         expect(cell).to_be_visible()
         cell.click()
         
@@ -45,10 +46,30 @@ class TimesheetPage(BasePage):
     def save_as_draft(self):
         self.page.get_by_test_id("save-draft-btn").click()
         expect(self.page.get_by_text("Draft saved successfully")).to_be_visible(timeout=5000)
-        
+
+    def auto_fill(self):
+        """
+        Clicks the Auto-fill button which fills all empty working days up to today
+        with the expected hours. Required before submitting to pass the submitGate check.
+        """
+        self.page.get_by_test_id("auto-fill-btn").click()
+        # Auto-fill fires a toast on completion; wait for it to confirm the action landed.
+        expect(self.page.get_by_text("Filled working days up to today")).to_be_visible(timeout=5000)
+
     def submit_timesheet(self):
+        """
+        Submits the timesheet. Requires auto_fill() to have been called first
+        to ensure the submitGate is unblocked (all working days up to today are filled).
+        """
         self.page.get_by_test_id("submit-timesheet-btn").click()
-        expect(self.page.get_by_text("Timesheet submitted successfully!")).to_be_visible(timeout=5000)
+        expect(self.page.get_by_text("Timesheet submitted successfully!")).to_be_visible(timeout=10000)
+
+    def open_first_draft_from_list(self):
+        """
+        From the timesheets list page, clicks the first row with status 'draft'
+        to open it in the grid view.
+        """
+        self.page.get_by_test_id("timesheet-row-draft").first.click()
 
     def expect_timesheet_in_list(self, status: str):
         expect(self.page.get_by_test_id(f"timesheet-row-{status}").first).to_be_visible()
