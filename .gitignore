@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+.pytest_cache/
+.auth/
+.env.e2e
+.env
+e2e-report.html
+test-results/
+testvenv/
