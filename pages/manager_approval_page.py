@@ -28,7 +28,9 @@ class ManagerApprovalPage(BasePage):
     def approve_first_pending_timesheet(self):
         """
         Opens the first timesheet in 'submitted' state from the approvals list
-        and clicks Approve. Waits for the success toast.
+        and clicks Approve. Waits for the router navigation back to the approvals
+        list (TimesheetGrid.tsx:1040) then verifies the row no longer appears as
+        submitted — the durable state change confirming the approval landed.
 
         NOTE: This action is IRREVERSIBLE in the current environment.
         This method is documented for completeness but the test that calls it
@@ -36,6 +38,12 @@ class ManagerApprovalPage(BasePage):
         """
         self.page.get_by_test_id("timesheet-row-submitted").first.click()
         self.page.get_by_test_id("approve-timesheet-btn").click()
+        # After approval, handleAction calls router.push("/approvals/timesheets")
+        # (TimesheetGrid.tsx:1040). Waiting for that navigation is the primary
+        # signal that the PATCH succeeded. The secondary check confirms the row
+        # is no longer in a submitted state in the list.
+        self.page.wait_for_url("**/approvals/timesheets", timeout=15000)
         expect(
-            self.page.get_by_text("Timesheet approved successfully")
-        ).to_be_visible(timeout=15000)
+            self.page.get_by_test_id("timesheet-row-submitted").first
+        ).not_to_be_visible()
+

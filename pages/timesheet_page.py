@@ -45,7 +45,10 @@ class TimesheetPage(BasePage):
         
     def save_as_draft(self):
         self.page.get_by_test_id("save-draft-btn").click()
-        expect(self.page.get_by_text("Draft saved successfully")).to_be_visible(timeout=15000)
+        # After a successful save the app calls router.push("/timesheets").
+        # Waiting for that navigation is more reliable than asserting on an
+        # ephemeral toast which can be dismissed before Playwright sees it.
+        self.page.wait_for_url("**/timesheets", timeout=15000)
 
     def auto_fill(self):
         """
@@ -53,8 +56,12 @@ class TimesheetPage(BasePage):
         with the expected hours. Required before submitting to pass the submitGate check.
         """
         self.page.get_by_test_id("auto-fill-btn").click()
-        # Auto-fill fires a toast on completion; wait for it to confirm the action landed.
-        expect(self.page.get_by_text("Filled working days up to today")).to_be_visible(timeout=15000)
+        # Auto-fill is a client-side state mutation — no navigation fires.
+        # The real proof it worked is that submitGate.blocked becomes false,
+        # which directly enables the submit button (TimesheetGrid.tsx:1577).
+        # This avoids matching against toast text that varies by whether a
+        # project template exists or not.
+        expect(self.page.get_by_test_id("submit-timesheet-btn")).to_be_enabled(timeout=15000)
 
     def submit_timesheet(self):
         """
@@ -62,7 +69,10 @@ class TimesheetPage(BasePage):
         to ensure the submitGate is unblocked (all working days up to today are filled).
         """
         self.page.get_by_test_id("submit-timesheet-btn").click()
-        expect(self.page.get_by_text("Timesheet submitted successfully!")).to_be_visible(timeout=15000)
+        # After a successful submit the app calls router.push("/timesheets")
+        # (TimesheetGrid.tsx:1008) — same path as save_as_draft. Waiting for
+        # the URL is a durable assertion that survives any copy changes to the toast.
+        self.page.wait_for_url("**/timesheets", timeout=15000)
 
     def open_first_draft_from_list(self):
         """
