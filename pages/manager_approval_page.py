@@ -1,28 +1,41 @@
 from playwright.sync_api import Page, expect
-import re
 from pages.base_page import BasePage
 
 class ManagerApprovalPage(BasePage):
+
     def navigate_to_dashboard(self):
         self.page.goto("/dashboard")
 
-    def check_and_open_notification(self, employee_name: str):
-        self.page.get_by_role("button", name="Notifications").click()
-        expect(self.page.get_by_role("button", name="Mark read").first).to_be_visible()
-        expect(self.page.get_by_text(re.compile(f".*{employee_name} has requested leave.*")).first).to_be_visible()
-        self.page.get_by_role("button", name="Open notification").first.click()
-        expect(self.page.get_by_text(re.compile(r".*Approver Notes.*Approve.*Reject.*"))).to_be_visible()
+    # ── Notifications ─────────────────────────────────────────────────────────
 
-    def navigate_to_leave_approvals(self):
-        self.page.get_by_role("link", name="Dashboard", exact=True).click()
-        self.page.get_by_role("link", name="Leave Approvals").click()
+    def open_notifications(self):
+        """Opens the notification drawer via the verified data-testid."""
+        self.page.get_by_test_id("notifications-btn").click()
 
-    def approve_pending_leave(self, employee_name: str, feedback: str):
-        row_pattern = re.compile(f".*{employee_name}.*Pending.*", re.IGNORECASE)
-        self.page.get_by_role("button", name=row_pattern).first.click()
-        
-        self.page.get_by_role("textbox", name="Add feedback or notes (optional)").fill(feedback)
-        self.page.get_by_role("button", name="Approve").click()
+    def open_first_notification(self):
+        """Clicks the first 'open notification' button in the drawer."""
+        self.page.get_by_test_id("open-notification-btn").first.click()
 
-    def verify_leave_is_approved(self):
-        expect(self.page.get_by_text(re.compile(r".*This request has been approved.*"))).to_be_visible()
+    def expect_notification_visible(self):
+        """Assert at least one unread notification (mark-read button) is present."""
+        expect(self.page.get_by_test_id("mark-read-btn").first).to_be_visible()
+
+    # ── Timesheet approvals ───────────────────────────────────────────────────
+
+    def navigate_to_timesheet_approvals(self):
+        self.page.goto("/approvals/timesheets")
+
+    def approve_first_pending_timesheet(self):
+        """
+        Opens the first timesheet in 'submitted' state from the approvals list
+        and clicks Approve. Waits for the success toast.
+
+        NOTE: This action is IRREVERSIBLE in the current environment.
+        This method is documented for completeness but the test that calls it
+        (TC-TS-04) is marked skip and must not be run against live data.
+        """
+        self.page.get_by_test_id("timesheet-row-submitted").first.click()
+        self.page.get_by_test_id("approve-timesheet-btn").click()
+        expect(
+            self.page.get_by_text("Timesheet approved successfully")
+        ).to_be_visible(timeout=15000)
