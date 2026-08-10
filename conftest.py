@@ -57,7 +57,7 @@ def setup_persona_session(playwright: Playwright, base_url: str, persona: str, e
 
 @pytest.fixture(scope="session")
 def admin_state(playwright: Playwright, pytestconfig):
-    base_url = pytestconfig.getini("base_url")
+    base_url = getattr(pytestconfig.option, "base_url", None) or pytestconfig.getini("base_url")
     email = os.getenv("E2E_ADMIN_EMAIL")
     password = os.getenv("E2E_ADMIN_PASSWORD")
     if not email or not password:
@@ -66,7 +66,7 @@ def admin_state(playwright: Playwright, pytestconfig):
 
 @pytest.fixture(scope="session")
 def employee_state(playwright: Playwright, pytestconfig):
-    base_url = pytestconfig.getini("base_url")
+    base_url = getattr(pytestconfig.option, "base_url", None) or pytestconfig.getini("base_url")
     email = os.getenv("E2E_EMPLOYEE_EMAIL")
     password = os.getenv("E2E_EMPLOYEE_PASSWORD")
     if not email or not password:
@@ -75,7 +75,7 @@ def employee_state(playwright: Playwright, pytestconfig):
 
 @pytest.fixture(scope="session")
 def manager_state(playwright: Playwright, pytestconfig):
-    base_url = pytestconfig.getini("base_url")
+    base_url = getattr(pytestconfig.option, "base_url", None) or pytestconfig.getini("base_url")
     email = os.getenv("E2E_MANAGER_EMAIL")
     password = os.getenv("E2E_MANAGER_PASSWORD")
     if not email or not password:
@@ -87,7 +87,7 @@ def admin_page(browser, admin_state, pytestconfig):
     """Provides a fresh page pre-authenticated as an admin."""
     context = browser.new_context(
         storage_state=admin_state,
-        base_url=pytestconfig.getini("base_url")
+        base_url=getattr(pytestconfig.option, "base_url", None) or pytestconfig.getini("base_url")
     )
     page = context.new_page()
     yield page
@@ -98,7 +98,7 @@ def employee_page(browser, employee_state, pytestconfig):
     """Provides a fresh page pre-authenticated as an employee."""
     context = browser.new_context(
         storage_state=employee_state,
-        base_url=pytestconfig.getini("base_url")
+        base_url=getattr(pytestconfig.option, "base_url", None) or pytestconfig.getini("base_url")
     )
     page = context.new_page()
     yield page
@@ -109,7 +109,7 @@ def manager_page(browser, manager_state, pytestconfig):
     """Provides a fresh page pre-authenticated as a manager."""
     context = browser.new_context(
         storage_state=manager_state,
-        base_url=pytestconfig.getini("base_url")
+        base_url=getattr(pytestconfig.option, "base_url", None) or pytestconfig.getini("base_url")
     )
     page = context.new_page()
     yield page
