@@ -65,20 +65,35 @@ These tests cover the core timesheet functionality from the perspective of an em
 **Do NOT directly run all timesheet tests blindly.** 
 Timesheet approval actions (tested under the `ts_approve` marker) are **irreversible** in the backend system. Running approval tests will permanently transition test timesheets into an "Approved" state, which cannot be undone or easily reset for subsequent test runs.
 
-To safely test timesheet functionality without triggering irreversible approvals, you should selectively run the tests using pytest markers.
+To safely test timesheet functionality without triggering irreversible approvals, you should selectively run the tests using pytest markers. This will be fixed soon.
 
 **How to run safely:**
-You can choose to only run tests related to navigation (`ts_nav`), drafts (`ts_draft`), and submissions (`ts_submit`).
+You should choose to only run tests related to navigation (`ts_nav`), drafts (`ts_draft`), and submissions (`ts_submit`).
 
-- **Run all timesheet tests EXCEPT approvals (Recommended):**
+- **Run all timesheet tests EXCEPT approvals and submission (Recommended):**
   ```bash
-  pytest tests/test_timesheet.py -m "not ts_approve"
+  pytest -m "auth or ts_nav or ts_draft" --headed
   ```
+  **The above command runs test that validate the following:**
+  
+  Manual employee login and logout, assertion that pages after actions are actually visible
+  
+  Inject admin, employee_manager and employee auth status and validate logins
+
+  Assert navigation to timesheet module through user-taken path
+
+  Enter an entry in the timesheet
+
+  Enter multiple entries in the timesheet
+
 - **Run only draft creation tests:**
   ```bash
   pytest -m ts_draft
   ```
-- **Run only submission tests:**
+  **Run only timesheet navigation check:**
+  ```bash
+  pytest -m ts_nav
+- **Run only submission tests(does not have a cleanup as of now):**
   ```bash
   pytest -m ts_submit
   ```
@@ -86,3 +101,4 @@ You can choose to only run tests related to navigation (`ts_nav`), drafts (`ts_d
 ## What to Expect
 - **Test Reports**: After execution, view the detailed run results by opening `e2e-report.html` in your browser.
 - **Debugging Artifacts**: If any test fails, check the `test-results/` directory. Playwright will automatically save state traces, video recordings, and screenshots to help you diagnose the failure.
+
