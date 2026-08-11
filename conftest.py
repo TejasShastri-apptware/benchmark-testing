@@ -40,7 +40,8 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
 
-    if rep.when == "call":
+    # Report if it's the actual test execution, or if the test failed during setup (e.g. fixture error)
+    if rep.when == "call" or (rep.when == "setup" and rep.failed):
         test_name = item.name
         status = rep.outcome
         duration = f"{rep.duration:.2f}s"
