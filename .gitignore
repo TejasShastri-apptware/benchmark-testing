@@ -7,3 +7,4 @@ __pycache__/
 e2e-report.html
 test-results/
 testvenv/
+*.json

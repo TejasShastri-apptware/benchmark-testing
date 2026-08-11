@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 import pytest
 from playwright.sync_api import Playwright, BrowserContext
 from pages.login_page import LoginPage
+from utils.google_reporter import GoogleReporter
+
+reporter = None
 
 AUTH_STATE_TTL_SECONDS = 55*60
 
@@ -24,6 +27,45 @@ def pytest_configure(config):
         # then falls back to the ini value, so setting it here takes precedence.
         config.option.__dict__.setdefault("base_url", env_base_url)
         config.option.base_url = env_base_url
+
+    global reporter
+    sheet_id = os.getenv("GOOGLE_SHEET_ID")
+    folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
+    cred_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
+    if sheet_id and folder_id and cred_path:
+        reporter = GoogleReporter(cred_path, sheet_id, folder_id)
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+
+    if rep.when == "call":
+        test_name = item.name
+        status = rep.outcome
+        duration = f"{rep.duration:.2f}s"
+        error_msg = str(rep.longrepr) if rep.failed else ""
+        screenshot_link = ""
+
+        page = None
+        for fixture_name in ["page", "admin_page", "employee_page", "manager_page"]:
+            if fixture_name in item.funcargs:
+                page = item.funcargs[fixture_name]
+                break
+        
+        if page and reporter:
+            os.makedirs("test-results", exist_ok=True)
+            screenshot_path = f"test-results/{test_name}.png"
+            try:
+                page.screenshot(path=screenshot_path)
+                screenshot_link = reporter.upload_screenshot(screenshot_path)
+            except Exception as e:
+                print(f"Failed to capture screenshot: {e}")
+                
+        if reporter:
+            # We truncate error_msg to avoid huge cells in Sheets
+            error_short = error_msg[:500] + "..." if len(error_msg) > 500 else error_msg
+            reporter.append_row(test_name, status, duration, error_short, screenshot_link)
 
 def get_auth_state_path(persona: str) -> str:
     # Store auth states in a hidden .auth directory
