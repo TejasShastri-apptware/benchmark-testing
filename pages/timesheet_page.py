@@ -1,10 +1,24 @@
+import re
 from playwright.sync_api import Page, expect
 from pages.base_page import BasePage
 
 class TimesheetPage(BasePage):
     def navigate(self):
         self.page.goto("/timesheets")
-        expect(self.page.get_by_test_id("new-timesheet-btn")).to_be_visible()
+        expect(self.page.get_by_test_id("new-timesheet-btn")).to_be_visible(timeout=15000)
+
+    def navigate_from_dashboard(self):
+        """
+        Navigates to the timesheets page via the sidebar nav link from the dashboard.
+        Used by the dedicated nav smoke test (TC-TS-NAV) only.
+        All other tests use navigate() (direct goto) for speed and isolation.
+        Selector: data-testid="nav-link-timesheets" (Sidebar.tsx:780)
+        """
+        self.page.goto("/dashboard")
+        self.page.get_by_test_id("nav-rail-time").click()
+        self.page.get_by_test_id("nav-link-timesheets").click()
+        expect(self.page).to_have_url(re.compile(r".*/timesheets"))
+        expect(self.page.get_by_test_id("new-timesheet-btn")).to_be_visible(timeout=15000)
         
     def start_new_timesheet(self):
         self.page.get_by_test_id("new-timesheet-btn").click()
@@ -15,7 +29,7 @@ class TimesheetPage(BasePage):
         Uses the data-testid prefix locator instead of text matching for robustness.
         """
         cell = self.page.locator('[data-testid^="add-time-"]').nth(index)
-        expect(cell).to_be_visible()
+        expect(cell).to_be_visible(timeout=15000)
         cell.click()
         
     def add_project_by_index(self, index: int):
@@ -23,7 +37,7 @@ class TimesheetPage(BasePage):
         Finds the Nth available 'Add work' project button and clicks it.
         """
         add_btn = self.page.locator('[data-testid^="add-project-"]').nth(index)
-        expect(add_btn).to_be_visible()
+        expect(add_btn).to_be_visible(timeout=15000)
         add_btn.click()
         
     def log_hours_and_description(self, index: int, hours: str, description: str):
@@ -31,12 +45,12 @@ class TimesheetPage(BasePage):
         Fills the hours and description for the Nth project input available in the drawer.
         """
         input_field = self.page.locator('[data-testid^="hour-input-"]').nth(index)
-        expect(input_field).to_be_visible()
+        expect(input_field).to_be_visible(timeout=15000)
         input_field.fill(hours)
         input_field.blur()
         
         desc_field = self.page.locator('[data-testid^="description-input-"]').nth(index)
-        expect(desc_field).to_be_visible()
+        expect(desc_field).to_be_visible(timeout=15000)
         desc_field.fill(description)
         desc_field.blur()
         

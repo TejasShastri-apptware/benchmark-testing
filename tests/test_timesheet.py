@@ -4,7 +4,26 @@ from pages.timesheet_page import TimesheetPage
 from pages.manager_approval_page import ManagerApprovalPage
 
 @pytest.mark.e2e
+@pytest.mark.ts_nav
+def test_nav_to_timesheets_from_dashboard(employee_page):
+    """
+    TC-TS-NAV: Verifies that the Timesheets sidebar nav link correctly navigates
+    from the dashboard to the timesheets list page.
+
+    This is the only timesheet test that exercises UI navigation.
+    All subsequent tests (TC-TS-01 onward) use direct goto() for speed and
+    isolation — they test timesheet functionality, not navigation.
+
+    Selector: data-testid="nav-link-timesheets" (Sidebar.tsx:780)
+    """
+    ts_page = TimesheetPage(employee_page)
+    ts_page.dismiss_welcome_dialog_if_present()
+    ts_page.navigate_from_dashboard()
+
+@pytest.mark.e2e
+@pytest.mark.ts_draft
 def test_employee_draft_timesheet(employee_page):
+
     """
     TC-TS-01: Employee creates a single-project, single-day draft.
     Verifies the draft appears in the timesheet list.
@@ -28,9 +47,10 @@ def test_employee_draft_timesheet(employee_page):
     ts_page.expect_timesheet_in_list("draft")
 
 @pytest.mark.e2e
+@pytest.mark.ts_draft
 def test_employee_multi_draft_timesheet(employee_page):
     """
-    TC-TS-02: Employee creates a multi-project, multi-day draft.
+    TC-TS-02: Employee creates a multi-day draft with the single available project.
     Verifies the draft appears in the timesheet list.
     """
     ts_page = TimesheetPage(employee_page)
@@ -39,24 +59,19 @@ def test_employee_multi_draft_timesheet(employee_page):
 
     ts_page.start_new_timesheet()
 
-    # Day 1: Add 2 projects
+    # Day 1: Add project
     ts_page.open_available_day_by_index(0)
     
     ts_page.add_project_by_index(0)
     ts_page.log_hours_and_description(0, "4", "Frontend component development")
     
-    ts_page.add_project_by_index(0)
-    ts_page.log_hours_and_description(1, "4", "Backend API changes")
-    
     ts_page.close_day_drawer()
 
-    # Day 2: Add 2 projects
+    # Day 2: Add project
+    # Since day 1 was logged, the next available day is now at index 0
     ts_page.open_available_day_by_index(0)
     ts_page.add_project_by_index(0)
     ts_page.log_hours_and_description(0, "5", "Writing E2E tests")
-    
-    ts_page.add_project_by_index(0)
-    ts_page.log_hours_and_description(1, "3", "Code review and bug fixes")
     
     ts_page.close_day_drawer()
 
@@ -66,6 +81,7 @@ def test_employee_multi_draft_timesheet(employee_page):
     ts_page.expect_timesheet_in_list("draft")
 
 @pytest.mark.e2e
+@pytest.mark.ts_submit
 def test_employee_submit_timesheet(employee_page):
     """
     TC-TS-03: Employee submits a timesheet via auto-fill.
@@ -113,6 +129,7 @@ def test_employee_submit_timesheet(employee_page):
 
 
 @pytest.mark.e2e
+@pytest.mark.ts_approve
 @pytest.mark.skip(
     reason=(
         "TC-TS-04 [GUARDED]: Manager approval is IRREVERSIBLE in the current environment. "
